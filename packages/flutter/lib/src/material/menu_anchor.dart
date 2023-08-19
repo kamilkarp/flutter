@@ -1519,6 +1519,28 @@ class RadioMenuButton<T> extends StatelessWidget {
   }
 }
 
+/// The type of builder function used by [SubmenuButton] to build the
+/// custom arrow icon instead of default one.
+///
+/// The `context` is the context of the [SubmenuButton]. It may be used to
+/// obtain the [Directionality] if it is required to decide how to build the
+/// icon.
+///
+/// The `preferredSize` is the preferred size of the default icon.
+/// It may be used to constrain the size of the custom icon and achive the
+/// same size as the default one.
+///
+/// The `preferredColor` is the preferred color of the default icon.
+/// This is added for convenience, so that the custom icon can use the same
+/// color as the default one would normally use from SubmenuButton's style.
+///
+/// Returns the custom arrow icon.
+typedef SubmenuButtonArrowIconBuilder = Widget Function(
+  BuildContext context,
+  double preferredSize,
+  Color preferredColor,
+);
+
 /// A menu button that displays a cascading menu.
 ///
 /// It can be used as part of a [MenuBar], or as a standalone widget.
@@ -1567,6 +1589,7 @@ class SubmenuButton extends StatefulWidget {
     this.statesController,
     this.leadingIcon,
     this.trailingIcon,
+    this.customArrowIconBuilder,
     required this.menuChildren,
     required this.child,
   });
@@ -1633,6 +1656,29 @@ class SubmenuButton extends StatefulWidget {
 
   /// An optional icon to display after the [child].
   final Widget? trailingIcon;
+
+  /// A builder for an arrow icon that will be displayed instead of the default one.
+  ///
+  /// The `preferredSize` is the size of the default icon if it would be used.
+  ///
+  /// The `preferredColor` is the color of the default icon if it would be used.
+  ///
+  /// You can use `Directionality.of(context)` to determine the direction of the arrow.
+  ///
+  /// If this is null, the default arrow icon will be used.
+  ///
+  /// ```dart
+  /// SubmenuButton(
+  ///  customArrowIconBuilder: (context, preferredSize, preferredColor) {
+  ///   if (Directionality.of(context) == TextDirection.ltr) {
+  ///     return MyCustomRightArrowIcon(preferredSize, preferredColor);
+  ///   }
+  ///   return MyCustomLeftArrowIcon(preferredSize, preferredColor);
+  ///   },
+  ///  ...
+  /// )
+  /// ```
+  final SubmenuButtonArrowIconBuilder? customArrowIconBuilder;
 
   /// The list of widgets that appear in the menu when it is opened.
   ///
@@ -1764,6 +1810,7 @@ class SubmenuButton extends StatefulWidget {
     properties.add(DiagnosticsProperty<Widget>('leadingIcon', leadingIcon, defaultValue: null));
     properties.add(DiagnosticsProperty<String>('child', child.toString()));
     properties.add(DiagnosticsProperty<Widget>('trailingIcon', trailingIcon, defaultValue: null));
+    properties.add(DiagnosticsProperty<SubmenuButtonArrowIconBuilder>('customArrowIconBuilder', customArrowIconBuilder, defaultValue: null));
     properties.add(DiagnosticsProperty<FocusNode?>('focusNode', focusNode));
     properties.add(DiagnosticsProperty<MenuStyle>('menuStyle', menuStyle, defaultValue: null));
     properties.add(DiagnosticsProperty<Offset>('alignmentOffset', alignmentOffset));
@@ -1918,6 +1965,7 @@ class _SubmenuButtonState extends State<SubmenuButton> {
               child: _MenuItemLabel(
                 leadingIcon: widget.leadingIcon,
                 trailingIcon: widget.trailingIcon,
+                arrowIconBuilder: widget.customArrowIconBuilder,
                 hasSubmenu: true,
                 showDecoration: (controller._anchor!._parent?._orientation ?? Axis.horizontal) == Axis.vertical,
                 child: child ?? const SizedBox(),
@@ -2985,6 +3033,7 @@ class _MenuItemLabel extends StatelessWidget {
     this.showDecoration = true,
     this.leadingIcon,
     this.trailingIcon,
+    this.arrowIconBuilder,
     this.shortcut,
     required this.child,
   });
@@ -3004,6 +3053,9 @@ class _MenuItemLabel extends StatelessWidget {
 
   /// The optional icon that comes after the [child].
   final Widget? trailingIcon;
+
+  /// The optional builder for an arrow icon that will be displayed instead of default one.
+  final SubmenuButtonArrowIconBuilder? arrowIconBuilder;
 
   /// The shortcut for this label, so that it can generate a string describing
   /// the shortcut.
@@ -3047,12 +3099,21 @@ class _MenuItemLabel extends StatelessWidget {
               ),
             ),
           ),
-        if (showDecoration && hasSubmenu)
+        if (showDecoration && hasSubmenu && arrowIconBuilder == null)
           Padding(
             padding: EdgeInsetsDirectional.only(start: horizontalPadding),
             child: const Icon(
               Icons.arrow_right, // Automatically switches with text direction.
               size: _kDefaultSubmenuIconSize,
+            ),
+          ),
+        if (showDecoration && hasSubmenu && arrowIconBuilder != null)
+          Padding(
+            padding: EdgeInsetsDirectional.only(start: horizontalPadding),
+            child: arrowIconBuilder!(
+              context,
+              _kDefaultSubmenuIconSize,
+              IconTheme.of(context).color!,
             ),
           ),
       ],

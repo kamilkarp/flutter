@@ -2184,6 +2184,80 @@ void main() {
       expect(find.text(TestMenu.subMenu00.label), findsNothing);
     });
 
+    testWidgets('SubmenuButton shows default arrow icon when customArrowIconBuilder is null', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: MenuBar(
+              controller: controller,
+              children: <Widget>[
+                SubmenuButton(
+                  menuChildren: <Widget>[
+                    SubmenuButton(
+                      menuChildren: <Widget>[
+                        MenuItemButton(
+                          child: Text(TestMenu.subSubMenu110.label),
+                        ),
+                      ],
+                      child: Text(TestMenu.subMenu00.label),
+                    ),
+                  ],
+                  child: Text(TestMenu.mainMenu0.label),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text(TestMenu.mainMenu0.label));
+      await tester.pump();
+
+      // Directionality is automatically switched
+      expect(find.byIcon(Icons.arrow_right), findsOneWidget);
+    });
+
+    testWidgets('SubmenuButton can show custom arrow widget instead of default icon', (WidgetTester tester) async {
+      const Color testArrowColor = Colors.yellow;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: MenuBar(
+              controller: controller,
+              children: <Widget>[
+                SubmenuButton(
+                  menuChildren: <Widget>[
+                    SubmenuButton(
+                      style: SubmenuButton.styleFrom(iconColor: testArrowColor),
+                      customArrowIconBuilder:
+                          (BuildContext context, double preferredSize, Color preferredColor) =>
+                               Text('customArrowIcon', style: TextStyle(color: preferredColor)),
+                      menuChildren: <Widget>[
+                        MenuItemButton(
+                          child: Text(TestMenu.subSubMenu110.label),
+                        ),
+                      ],
+                      child: Text(TestMenu.subMenu00.label),
+                    ),
+                  ],
+                  child: Text(TestMenu.mainMenu0.label),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text(TestMenu.mainMenu0.label));
+      await tester.pump();
+
+      final Text customArrowIcon = tester.widget<Text>(find.text('customArrowIcon'));
+
+      expect(customArrowIcon.style?.color, testArrowColor);
+      expect(find.byIcon(Icons.arrow_right), findsNothing);
+    });
+
     testWidgets('diagnostics', (WidgetTester tester) async {
       final ButtonStyle style = ButtonStyle(
         shape: MaterialStateProperty.all<OutlinedBorder?>(const StadiumBorder()),
